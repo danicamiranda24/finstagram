@@ -9,6 +9,8 @@ class LoginPage extends StatefulWidget {
 
 class LoginPageState extends State<LoginPage> {
   double? _deviceHeight, _deviceWidth;
+  final GlobalKey<FormState> _loginFormKey = GlobalKey<FormState>();
+  String? _email, _password;
   late Size _mediaSize;
 
   @override
@@ -72,40 +74,48 @@ class LoginPageState extends State<LoginPage> {
   }
 
   Widget _buildForm() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Center(
-          child: Text(
-            "Welcome!",
-            style: TextStyle(
-              color: Colors.black,
-              fontSize: 50,
-              fontWeight: FontWeight.w800,
+    return Container(
+      child: Form(
+        key: _loginFormKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Center(
+              child: Text(
+                "Welcome!",
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 40,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
             ),
-          ),
+            SizedBox(height: _deviceHeight! * 0.05),
+            _buildInputField(
+              'Email',
+              const Icon(
+                Icons.email_outlined,
+                color: Colors.grey,
+              ),
+              _email,
+              false,
+            ),
+            SizedBox(height: _deviceHeight! * 0.02),
+            _buildInputField(
+              'Password',
+              const Icon(
+                Icons.lock_outline,
+                color: Colors.grey,
+              ),
+              _password,
+              true,
+            ),
+                        _buildForgotPassword(),
+                       _buildLoginButton(),
+                        _buildRegister(),
+          ],
         ),
-        SizedBox(height: _deviceHeight! * 0.10),
-        _buildInputField(
-            'Email',
-            const Icon(
-              Icons.email_outlined,
-              color: Colors.grey,
-            )),
-        SizedBox(height: _deviceHeight! * 0.03),
-        _buildInputField(
-            'Password',
-            const Icon(
-              Icons.lock_outline,
-              color: Colors.grey,
-            )),
-        SizedBox(height: _deviceHeight! * 0.03),
-        _buildForgotPassword(),
-         SizedBox(height: _deviceHeight! * 0.03),
-        _buildLoginButton(),
-        SizedBox(height: _deviceHeight! * 0.03),
-        _buildRegister(),
-      ],
+      ),
     );
   }
 
@@ -123,8 +133,9 @@ class LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildInputField(String hintText, Icon logo) {
+  Widget _buildInputField(String hintText, Icon logo, String? _textValue, bool _isPassword) {
     return TextFormField(
+      obscureText: _isPassword,
       decoration: InputDecoration(
         border: InputBorder.none,
         filled: true,
@@ -132,10 +143,29 @@ class LoginPageState extends State<LoginPage> {
         fillColor: Colors.grey.shade200,
         prefixIcon: logo,
       ),
+      onSaved: (_value) {
+        setState(() {
+          _textValue = _value;
+        });
+      },
+      validator: (_value) {
+       bool _result;
+       if (_isPassword == false) {
+      _result = _value!.contains(
+          RegExp(
+              r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"),
+        );
+       return _result ? null : "Please enter a valid email";
+       } else {
+       return _value!.length > 6 ? null : "Please enter a password greater than 6 characters";
+       }
+      
+      },
     );
   }
 
-  Widget _buildGreyText(String text, Color color, [FontWeight? fontWeight,TextDecoration? textDecoration]) {
+  Widget _buildGreyText(String text, Color color,
+      [FontWeight? fontWeight, TextDecoration? textDecoration]) {
     return Center(
       child: Text(
         text,
@@ -150,11 +180,16 @@ class LoginPageState extends State<LoginPage> {
 
   Widget _buildLoginButton() {
     return MaterialButton(
-      onPressed: () {},
+      onPressed: _loginUser,
       color: Colors.red,
       minWidth: _deviceHeight,
-      height: _deviceHeight! * 0.08,
-      child: const Text("Sign In",style: TextStyle(color: Colors.white),),
+      height: _deviceHeight! * 0.06,
+      child: const Text(
+        "Sign In",
+        style: TextStyle(
+          color: Colors.white,
+        ),
+      ),
     );
   }
 
@@ -162,21 +197,26 @@ class LoginPageState extends State<LoginPage> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-      _buildGreyText("Didn't have any account?", Colors.grey,FontWeight.w100),
-      TextButton(
-      onPressed: () {},
-      style: TextButton.styleFrom(
-        foregroundColor: Colors.green,
-      ),
-      child: _buildGreyText(
-        "Sign Up Here",
-        Colors.black,
-        FontWeight.w800,
-        TextDecoration.underline,
-      )),
-    ],);
+        _buildGreyText(
+            "Didn't have any account?", Colors.grey, FontWeight.w100),
+        TextButton(
+            onPressed: () => Navigator.pushNamed(context, 'register'),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.green,
+            ),
+            child: _buildGreyText(
+              "Sign Up Here",
+              Colors.black,
+              FontWeight.w800,
+              TextDecoration.underline,
+            )),
+      ],
+    );
   }
 
-
-
+  void _loginUser() {
+     if (_loginFormKey.currentState!.validate()) {
+      _loginFormKey.currentState!.save();
+    }
+  }
 }
