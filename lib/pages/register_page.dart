@@ -1,7 +1,9 @@
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:finstagram/services/firebase_service.dart';
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 
 class RegisterPage extends StatefulWidget {
   @override
@@ -16,6 +18,26 @@ class _RegisterPageState extends State<RegisterPage> {
   String? _name, _email, _password;
   File? _image;
 
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+      void dispose() {
+        _nameController.dispose();
+    _emailController.dispose();
+   _passwordController.dispose();
+    super.dispose();
+  }
+
+  FireBaseService? _firebaseService;
+
+  @override
+  void initState() {
+    super.initState();
+    _firebaseService = GetIt.instance.get<FireBaseService>();
+  }
+
+
   @override
   Widget build(BuildContext context) {
     _deviceHeight = MediaQuery.of(context).size.height;
@@ -29,23 +51,23 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
           child: SingleChildScrollView(
             reverse: true,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                mainAxisSize: MainAxisSize.max,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  _createCaption(),
-                  SizedBox(height: _deviceHeight! * 0.05),
-                  _profileImage(),
-                  SizedBox(height: _deviceHeight! * 0.05),
-                  _registrationForm(),
-                  SizedBox(height: _deviceHeight! * 0.05),
-                  _registerButton(),
-                ],
-              ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              mainAxisSize: MainAxisSize.max,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _createCaption(),
+                SizedBox(height: _deviceHeight! * 0.05),
+                _profileImage(),
+                SizedBox(height: _deviceHeight! * 0.05),
+                _registrationForm(),
+                SizedBox(height: _deviceHeight! * 0.05),
+                _registerButton(),
+              ],
             ),
           ),
         ),
+      ),
     );
   }
 
@@ -120,17 +142,19 @@ class _RegisterPageState extends State<RegisterPage> {
           mainAxisSize: MainAxisSize.max,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            _textField("Name", _name, false),
-            _textField("Email Address", _email, false),
-            _textField("Password", _password, true),
+            _textField(_nameController, "Name", _name, false),
+            _textField(_emailController, "Email Address", _email, false),
+            _textField(_passwordController, "Password", _password, true),
           ],
         ),
       ),
     );
   }
 
-  Widget _textField(String hintText, String? _textValue, bool _isPassword) {
+  Widget _textField(TextEditingController myController, String hintText,
+      String? _textValue, bool _isPassword) {
     return TextFormField(
+      controller: myController,
       obscureText: _isPassword,
       decoration: InputDecoration(
         border: InputBorder.none,
@@ -182,10 +206,19 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  void _registerUser() {
+  void _registerUser() async {
     if (_registerFormKey.currentState!.validate() && _image != null) {
       _registerFormKey.currentState!.save();
-      Navigator.pushNamed(context, 'home');
+      _name = _nameController.text;
+      _email = _emailController.text;
+      _password = _passwordController.text;
+      bool _result = await _firebaseService!.registerUser(
+        name: _name!,
+        email: _email!,
+        password: _password!,
+        image: _image!,
+      );
+      if (_result) Navigator.pop(context);
     }
   }
 }

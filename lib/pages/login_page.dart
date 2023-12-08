@@ -1,4 +1,6 @@
+import 'package:finstagram/services/firebase_service.dart';
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -9,9 +11,26 @@ class LoginPage extends StatefulWidget {
 
 class LoginPageState extends State<LoginPage> {
   double? _deviceHeight, _deviceWidth;
+  FireBaseService? _firebaseService;
   final GlobalKey<FormState> _loginFormKey = GlobalKey<FormState>();
   String? _email, _password;
+
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
   late Size _mediaSize;
+
+  @override
+  void initState() {
+    super.initState();
+    _firebaseService = GetIt.instance.get<FireBaseService>();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,10 +65,11 @@ class LoginPageState extends State<LoginPage> {
           Text(
             "Finstagram",
             style: TextStyle(
-                color: Colors.white,
-                fontSize: 50,
-                fontWeight: FontWeight.w500,
-                fontStyle: FontStyle.italic),
+              fontFamily: 'Vidaloka-Regular',
+              color: Colors.white,
+              fontSize: 50,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ),
@@ -92,6 +112,7 @@ class LoginPageState extends State<LoginPage> {
             ),
             SizedBox(height: _deviceHeight! * 0.05),
             _buildInputField(
+              _emailController,
               'Email',
               const Icon(
                 Icons.email_outlined,
@@ -102,6 +123,7 @@ class LoginPageState extends State<LoginPage> {
             ),
             SizedBox(height: _deviceHeight! * 0.02),
             _buildInputField(
+              _passwordController,
               'Password',
               const Icon(
                 Icons.lock_outline,
@@ -110,9 +132,9 @@ class LoginPageState extends State<LoginPage> {
               _password,
               true,
             ),
-                        _buildForgotPassword(),
-                       _buildLoginButton(),
-                        _buildRegister(),
+            _buildForgotPassword(),
+            _buildLoginButton(),
+            _buildRegister(),
           ],
         ),
       ),
@@ -133,8 +155,10 @@ class LoginPageState extends State<LoginPage> {
     );
   }
 
-  Widget _buildInputField(String hintText, Icon logo, String? _textValue, bool _isPassword) {
+  Widget _buildInputField(TextEditingController myController, String hintText,
+      Icon logo, String? _textValue, bool _isPassword) {
     return TextFormField(
+      controller: myController,
       obscureText: _isPassword,
       decoration: InputDecoration(
         border: InputBorder.none,
@@ -149,17 +173,18 @@ class LoginPageState extends State<LoginPage> {
         });
       },
       validator: (_value) {
-       bool _result;
-       if (_isPassword == false) {
-      _result = _value!.contains(
-          RegExp(
-              r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"),
-        );
-       return _result ? null : "Please enter a valid email";
-       } else {
-       return _value!.length > 6 ? null : "Please enter a password greater than 6 characters";
-       }
-      
+        bool _result;
+        if (_isPassword == false) {
+          _result = _value!.contains(
+            RegExp(
+                r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"),
+          );
+          return _result ? null : "Please enter a valid email";
+        } else {
+          return _value!.length > 6
+              ? null
+              : "Please enter a password greater than 6 characters";
+        }
       },
     );
   }
@@ -214,9 +239,16 @@ class LoginPageState extends State<LoginPage> {
     );
   }
 
-  void _loginUser() {
-     if (_loginFormKey.currentState!.validate()) {
+  void _loginUser() async {
+    if (_loginFormKey.currentState!.validate()) {
       _loginFormKey.currentState!.save();
+      _email = _emailController.text;
+      _password = _passwordController.text;
+      bool _result = await _firebaseService!
+          .loginUser(email: _email!, password: _password!);
+      if (_result) {
+        Navigator.popAndPushNamed(context, 'home');
+      } else {}
     }
   }
 }
